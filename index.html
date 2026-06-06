@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finanztool</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;padding:1rem;}
+.app{max-width:720px;margin:0 auto;}
+.account-switcher{display:flex;margin-bottom:1.5rem;border:1px solid #e0e0d8;border-radius:10px;overflow:hidden;}
+.acc-btn{flex:1;background:none;border:none;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit;color:#666;}
+.acc-btn.active{background:#1a1a1a;color:#fff;font-weight:500;}
+.tabs{display:flex;gap:4px;margin-bottom:1.25rem;border-bottom:1px solid #e0e0d8;}
+.tab{background:none;border:none;padding:7px 12px;font-size:12px;color:#666;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;font-family:inherit;}
+.tab.active{color:#1a1a1a;border-bottom-color:#1a1a1a;font-weight:500;}
+.sec{display:none;}.sec.active{display:block;}
+.month-nav{display:flex;align-items:center;gap:10px;margin-bottom:1.25rem;}
+.month-label{flex:1;text-align:center;}
+.month-label strong{display:block;font-size:15px;font-weight:500;}
+.month-label small{font-size:11px;color:#888;}
+.btn{padding:6px 14px;font-size:13px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid #ccc;background:#fff;color:#1a1a1a;}
+.btn:hover{background:#f0f0e8;}
+.btn.primary{background:#1a1a1a;color:#fff;border-color:transparent;}
+.btn.primary:hover{opacity:.85;}
+.budget-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:1.25rem;}
+.bcard{background:#fff;border:1px solid #e8e8e0;border-radius:12px;padding:12px 14px;cursor:pointer;align-self:start;}
+.bcard:hover{box-shadow:0 2px 8px rgba(0,0,0,.08);}
+.bcard-top{display:flex;align-items:center;gap:7px;margin-bottom:7px;}
+.bcard-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.bcard-name{font-size:12px;color:#666;font-weight:500;flex:1;}
+.bcard-toggle{font-size:10px;color:#aaa;}
+.bcard-spent{font-size:19px;font-weight:500;margin-bottom:1px;}
+.bcard-limit{font-size:11px;color:#aaa;}
+.bcard-track{height:5px;background:#f0f0e8;border-radius:3px;overflow:hidden;margin-top:7px;}
+.bcard-fill{height:100%;border-radius:3px;}
+.bcard-rem{font-size:11px;margin-top:4px;color:#aaa;}
+.bcard-rem.over{color:#A32D2D;font-weight:500;}
+.bcard-rem.warn{color:#BA7517;}
+.bcard-entries{display:none;margin-top:8px;border-top:1px solid #f0f0e8;padding-top:8px;}
+.bcard-entries.open{display:block;}
+.bcard-entry-row{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;padding:5px 0;border-bottom:0.5px solid #f0f0e8;font-size:11px;}
+.bcard-entry-row:last-child{border-bottom:none;}
+.bcard-entry-name{flex:1;min-width:0;color:#444;word-break:break-word;line-height:1.4;}
+.bcard-entry-meta{font-size:10px;color:#aaa;display:block;}
+.bcard-entry-amt{font-weight:500;white-space:nowrap;flex-shrink:0;color:#1a1a1a;min-width:52px;text-align:right;}
+.alert-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;margin-bottom:6px;font-size:12px;}
+.alert-bar.over{background:#FCEBEB;color:#A32D2D;}
+.alert-bar.warn{background:#FAEEDA;color:#BA7517;}
+.divider{border:none;border-top:1px solid #e8e8e0;margin:1.25rem 0;}
+.sec-label{font-size:11px;font-weight:500;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.entry-item{display:flex;align-items:center;gap:9px;padding:8px 11px;background:#fff;border:1px solid #e8e8e0;border-radius:8px;margin-bottom:5px;}
+.entry-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.entry-info{flex:1;min-width:0;}
+.entry-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.entry-meta{font-size:11px;color:#888;}
+.entry-amount{font-size:13px;font-weight:500;white-space:nowrap;}
+.entry-del{background:none;border:none;cursor:pointer;color:#bbb;font-size:18px;padding:0 2px;line-height:1;}
+.entry-del:hover{color:#A32D2D;}
+.empty{text-align:center;padding:1.5rem;color:#bbb;font-size:13px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+.form-group{display:flex;flex-direction:column;gap:4px;}
+.form-group label{font-size:12px;color:#666;}
+.form-group input,.form-group select{height:34px;padding:0 10px;font-family:inherit;border:1px solid #ddd;border-radius:8px;font-size:13px;}
+.form-actions{display:flex;justify-content:flex-end;margin-top:8px;}
+.cat-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.cat-pill{padding:4px 11px;font-size:12px;border-radius:20px;border:1px solid #ccc;background:none;cursor:pointer;font-family:inherit;color:#666;}
+.cat-pill.active{font-weight:500;color:#1a1a1a;border-color:#888;}
+.sum-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px;}
+.sum-label{font-size:13px;color:#666;}
+.sum-val{font-size:16px;font-weight:500;}
+.sum-val.green{color:#3B6D11;}
+.sum-val.small{font-size:13px;}
+.period-filter{margin-bottom:10px;}
+.period-filter select{height:30px;padding:0 8px;font-size:12px;font-family:inherit;border:1px solid #ddd;border-radius:6px;}
+.chart-wrap{position:relative;width:100%;height:180px;margin-bottom:1.25rem;}
+.drop-zone{border:1.5px dashed #ccc;border-radius:12px;padding:1.5rem;text-align:center;cursor:pointer;margin-bottom:1rem;}
+.drop-zone:hover,.drop-zone.drag-over{background:#f5f5f0;}
+.drop-zone p{font-size:13px;color:#666;margin-bottom:2px;}
+.drop-zone small{font-size:11px;color:#aaa;}
+.log{font-size:12px;border-radius:8px;padding:10px 12px;margin-top:8px;}
+.log.ok{background:#EAF3DE;color:#3B6D11;}
+.log.err{background:#FCEBEB;color:#A32D2D;}
+.assign-list{display:flex;flex-direction:column;gap:5px;margin-top:10px;max-height:280px;overflow-y:auto;}
+.assign-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#fff;border:1px solid #e8e8e0;border-radius:8px;}
+.assign-name{flex:1;font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.assign-amt{font-size:12px;font-weight:500;min-width:65px;text-align:right;}
+.assign-row select{height:26px;padding:0 5px;font-size:11px;font-family:inherit;min-width:120px;border:1px solid #ddd;border-radius:6px;}
+.notes-box{background:#FAEEDA;border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+.note-item{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:0.5px solid #EF9F27;}
+.note-item:last-of-type{border-bottom:none;}
+.note-text{flex:1;font-size:12px;color:#633806;}
+.note-del{background:none;border:none;cursor:pointer;color:#BA7517;font-size:14px;padding:0;}
+.notes-add{display:flex;gap:8px;margin-top:8px;}
+.notes-add input{flex:1;height:32px;padding:0 10px;font-family:inherit;border:1px solid #EF9F27;border-radius:6px;font-size:12px;}
+
+/* Delete all + Undo */
+.danger-bar{display:flex;justify-content:flex-end;margin-bottom:8px;}
+.btn-danger{padding:5px 12px;font-size:12px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid #E24B4A;background:#fff;color:#A32D2D;}
+.btn-danger:hover{background:#FCEBEB;}
+.undo-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;display:flex;align-items:center;gap:12px;z-index:2000;box-shadow:0 4px 16px rgba(0,0,0,.25);transition:opacity .3s;}
+.undo-toast.hidden{opacity:0;pointer-events:none;}
+.undo-btn{background:none;border:1px solid rgba(255,255,255,.4);border-radius:6px;color:#fff;cursor:pointer;font-family:inherit;font-size:12px;padding:3px 10px;}
+.undo-btn:hover{background:rgba(255,255,255,.15);}
+
+/* Templates */
+.tpl-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e8e8e0;border-radius:8px;margin-bottom:5px;}
+.tpl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.tpl-info{flex:1;min-width:0;}
+.tpl-name{font-size:13px;font-weight:500;}
+.tpl-meta{font-size:11px;color:#888;}
+.tpl-amt{font-size:13px;font-weight:500;white-space:nowrap;min-width:70px;text-align:right;}
+.tpl-actions{display:flex;gap:4px;}
+.tpl-btn{background:none;border:1px solid #e0e0d8;border-radius:6px;cursor:pointer;font-size:11px;padding:3px 8px;color:#666;font-family:inherit;}
+.tpl-btn:hover{background:#f5f5f0;}
+.tpl-btn.del:hover{background:#FCEBEB;color:#A32D2D;border-color:#E24B4A;}
+.tpl-form{background:#f9f9f5;border:1px solid #e8e8e0;border-radius:10px;padding:14px;margin-bottom:12px;}
+
+/* Monthly Dialog */
+.monthly-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;align-items:flex-start;justify-content:center;padding-top:40px;overflow-y:auto;}
+.monthly-overlay.open{display:flex;}
+.monthly-modal{background:#fff;border-radius:16px;padding:24px;max-width:380px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.18);margin-bottom:40px;}
+.monthly-modal h3{font-size:15px;font-weight:600;margin-bottom:4px;}
+.monthly-modal .mm-sub{font-size:12px;color:#888;margin-bottom:16px;}
+.mm-section{margin-bottom:14px;}
+.mm-section-label{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.mm-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;margin-bottom:4px;border:1px solid #e8e8e0;background:#fff;}
+.mm-item.checked{background:#EAF3DE;border-color:#8ab84a;}
+.mm-item input[type=checkbox]{width:15px;height:15px;accent-color:#3B6D11;flex-shrink:0;cursor:pointer;}
+.mm-item-info{flex:1;cursor:pointer;}
+.mm-item-name{font-size:12px;font-weight:500;}
+.mm-item-meta{font-size:11px;color:#888;}
+.mm-item-amt{font-size:12px;font-weight:500;white-space:nowrap;}
+.mm-actions{display:flex;gap:8px;margin-top:16px;}
+.mm-actions button{flex:1;padding:9px;font-size:13px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid #ccc;}
+.mm-confirm{background:#1a1a1a;color:#fff;border-color:transparent!important;}
+.mm-confirm:hover{opacity:.85;}
+.mm-skip:hover{background:#f5f5f0;}
+.mm-select-all{font-size:11px;color:#666;cursor:pointer;text-decoration:underline;margin-bottom:8px;display:inline-block;}
+
+/* Backup */
+.backup-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.backup-label{font-size:12px;color:#888;}
+.backup-btns{display:flex;gap:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="account-switcher">
+  <button class="acc-btn active" onclick="switchAccount('personal')">Mein Konto (Sparkasse)</button>
+  <button class="acc-btn" onclick="switchAccount('joint')">Gemeinsam (ING)</button>
+</div>
+
+<div id="account-personal">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('p','overview')">Übersicht</button>
+    <button class="tab" onclick="switchTab('p','add')">+ Eintragen</button>
+    <button class="tab" onclick="switchTab('p','entries')">Einträge</button>
+    <button class="tab" onclick="switchTab('p','templates')">Vorlagen</button>
+    <button class="tab" onclick="switchTab('p','import')">CSV Import</button>
+  </div>
+  <div id="p-tab-overview" class="sec active">
+    <div class="month-nav">
+      <button class="btn" onclick="changeMonth('p',-1)">←</button>
+      <div class="month-label"><strong id="p-ml-name"></strong><small id="p-ml-range"></small></div>
+      <button class="btn" onclick="changeMonth('p',1)">→</button>
+    </div>
+    <div id="p-alerts"></div>
+    <div class="budget-cards" id="p-budget-cards"></div>
+    <div class="chart-wrap"><canvas id="p-pieChart"></canvas></div>
+    <hr class="divider">
+    <div class="sum-row"><span class="sum-label">Einnahmen</span><span class="sum-val green" id="p-income"></span></div>
+    <div class="sum-row" style="margin-top:4px;"><span class="sum-label">Ausgaben</span><span class="sum-val" id="p-total"></span></div>
+    <div class="sum-row" style="margin-top:8px;border-top:1px solid #e8e8e0;padding-top:8px;"><span class="sum-label" style="font-weight:500;">Übrig</span><span class="sum-val" id="p-balance" style="font-size:20px;"></span></div>
+    <div class="sum-row" style="margin-top:3px;"><span class="sum-label">Davon gespart</span><span class="sum-val green small" id="p-saved"></span></div>
+    <hr class="divider">
+    <div id="p-notes-section"></div>
+    <hr class="divider">
+    <div class="backup-bar">
+      <span class="backup-label">💾 Datensicherung</span>
+      <div class="backup-btns">
+        <button class="btn" onclick="createBackup()">Backup erstellen</button>
+        <label class="btn" style="cursor:pointer;">Backup laden<input type="file" accept=".json" style="display:none" onchange="loadBackup(this.files[0])"></label>
+      </div>
+    </div>
+  </div>
+  <div id="p-tab-add" class="sec">
+    <p class="sec-label">Neue Buchung</p>
+    <div class="form-row">
+      <div class="form-group"><label>Beschreibung</label><input type="text" id="p-in-desc" placeholder="z.B. Netflix"></div>
+      <div class="form-group"><label>Betrag (€)</label><input type="number" id="p-in-amt" placeholder="0,00" min="0" step="0.01"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Kategorie</label><select id="p-in-cat"></select></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="p-in-date"></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" onclick="addEntry('p')">✓ Speichern</button></div>
+    <div id="p-add-fb" style="font-size:12px;text-align:right;margin-top:6px;height:16px;"></div>
+  </div>
+  <div id="p-tab-entries" class="sec">
+    <div class="period-filter"><select id="p-f-period" onchange="renderEntries('p')"><option value="">Alle Zeiträume</option></select></div>
+    <div class="cat-pills" id="p-cat-pills"></div>
+    <div class="danger-bar"><button class="btn-danger" onclick="deleteAllEntries('p')">🗑 Alle gefilterten löschen</button></div>
+    <div id="p-entries-list"></div>
+  </div>
+  <div id="p-tab-templates" class="sec">
+    <p class="sec-label">Wiederkehrende Vorlagen</p>
+    <div id="p-tpl-form-wrap"></div>
+    <div id="p-tpl-list"></div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn" style="flex:1;" onclick="showTplForm('p')">+ Neue Vorlage</button>
+      <button class="btn primary" style="flex:1;" onclick="forceMonthlyDialog('p')">↓ Vorlagen übernehmen</button>
+    </div>
+  </div>
+  <div id="p-tab-import" class="sec">
+    <p class="sec-label">Sparkasse CSV importieren</p>
+    <div class="drop-zone" id="p-dz" onclick="document.getElementById('p-csv-in').click()">
+      <p>CSV hier ablegen oder klicken</p><small>Sparkasse Umsatz-Export</small>
+    </div>
+    <input type="file" id="p-csv-in" accept=".csv,.txt" style="display:none" onchange="handleFile('p',this.files[0])">
+    <div id="p-log" style="display:none" class="log"></div>
+    <div id="p-assign-sec" style="display:none">
+      <hr class="divider"><p class="sec-label">Kategorien zuweisen</p>
+      <div class="assign-list" id="p-assign-list"></div>
+      <div class="form-actions" style="margin-top:12px;"><button class="btn primary" onclick="confirmImport('p')">✓ Importieren</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="account-joint" style="display:none">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('j','overview')">Übersicht</button>
+    <button class="tab" onclick="switchTab('j','add')">+ Eintragen</button>
+    <button class="tab" onclick="switchTab('j','entries')">Einträge</button>
+    <button class="tab" onclick="switchTab('j','templates')">Vorlagen</button>
+    <button class="tab" onclick="switchTab('j','import')">CSV Import</button>
+  </div>
+  <div id="j-tab-overview" class="sec active">
+    <div class="month-nav">
+      <button class="btn" onclick="changeMonth('j',-1)">←</button>
+      <div class="month-label"><strong id="j-ml-name"></strong><small id="j-ml-range"></small></div>
+      <button class="btn" onclick="changeMonth('j',1)">→</button>
+    </div>
+    <div id="j-alerts"></div>
+    <div class="budget-cards" id="j-budget-cards"></div>
+    <div class="chart-wrap"><canvas id="j-pieChart"></canvas></div>
+    <hr class="divider">
+    <div class="sum-row"><span class="sum-label">Einnahmen (2x 800 €)</span><span class="sum-val green" id="j-income">1.600 €</span></div>
+    <div class="sum-row" style="margin-top:4px;"><span class="sum-label">Gesamt Ausgaben</span><span class="sum-val" id="j-total"></span></div>
+    <div class="sum-row" style="margin-top:8px;border-top:1px solid #e8e8e0;padding-top:8px;"><span class="sum-label" style="font-weight:500;">Überschuss</span><span class="sum-val" id="j-balance" style="font-size:20px;"></span></div>
+    <div class="sum-row" style="margin-top:3px;"><span class="sum-label">Dein Anteil (50%)</span><span class="sum-val green small" id="j-share"></span></div>
+    <hr class="divider">
+    <div id="j-notes-section"></div>
+  </div>
+  <div id="j-tab-add" class="sec">
+    <p class="sec-label">Neue Buchung (Gemeinschaftskonto)</p>
+    <div class="form-row">
+      <div class="form-group"><label>Beschreibung</label><input type="text" id="j-in-desc" placeholder="z.B. REWE"></div>
+      <div class="form-group"><label>Betrag (€)</label><input type="number" id="j-in-amt" placeholder="0,00" min="0" step="0.01"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Kategorie</label><select id="j-in-cat"></select></div>
+      <div class="form-group"><label>Datum</label><input type="date" id="j-in-date"></div>
+    </div>
+    <div class="form-actions"><button class="btn primary" onclick="addEntry('j')">✓ Speichern</button></div>
+    <div id="j-add-fb" style="font-size:12px;text-align:right;margin-top:6px;height:16px;"></div>
+  </div>
+  <div id="j-tab-entries" class="sec">
+    <div class="period-filter"><select id="j-f-period" onchange="renderEntries('j')"><option value="">Alle Zeiträume</option></select></div>
+    <div class="cat-pills" id="j-cat-pills"></div>
+    <div class="danger-bar"><button class="btn-danger" onclick="deleteAllEntries('j')">🗑 Alle gefilterten löschen</button></div>
+    <div id="j-entries-list"></div>
+  </div>
+  <div id="j-tab-templates" class="sec">
+    <p class="sec-label">Wiederkehrende Vorlagen</p>
+    <div id="j-tpl-form-wrap"></div>
+    <div id="j-tpl-list"></div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <button class="btn" style="flex:1;" onclick="showTplForm('j')">+ Neue Vorlage</button>
+      <button class="btn primary" style="flex:1;" onclick="forceMonthlyDialog('j')">↓ Vorlagen übernehmen</button>
+    </div>
+  </div>
+  <div id="j-tab-import" class="sec">
+    <p class="sec-label">ING CSV importieren</p>
+    <div class="drop-zone" id="j-dz" onclick="document.getElementById('j-csv-in').click()">
+      <p>CSV hier ablegen oder klicken</p><small>ING Umsatz-Export</small>
+    </div>
+    <input type="file" id="j-csv-in" accept=".csv,.txt" style="display:none" onchange="handleFile('j',this.files[0])">
+    <div id="j-log" style="display:none" class="log"></div>
+    <div id="j-assign-sec" style="display:none">
+      <hr class="divider"><p class="sec-label">Kategorien zuweisen</p>
+      <div class="assign-list" id="j-assign-list"></div>
+      <div class="form-actions" style="margin-top:12px;"><button class="btn primary" onclick="confirmImport('j')">✓ Importieren</button></div>
+    </div>
+  </div>
+</div>
+</div>
+<div class="undo-toast hidden" id="undo-toast">
+  <span id="undo-msg"></span>
+  <button class="undo-btn" onclick="undoDelete()">↩ Rückgängig</button>
+</div>
+
+<div class="monthly-overlay" id="monthly-overlay">
+  <div class="monthly-modal">
+    <h3 id="mm-title">Vorlagen übernehmen</h3>
+    <p class="mm-sub" id="mm-sub"></p>
+    <span class="mm-select-all" onclick="mmSelectAll()">Alle auswählen / abwählen</span>
+    <div id="mm-list"></div>
+    <div class="mm-actions">
+      <button class="mm-skip" onclick="closeMonthly()">Überspringen</button>
+      <button class="mm-confirm" onclick="confirmMonthly()">✓ Übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const P_IMPORTED=[{"id":1,"date":"2026-05-15","amount":30.0,"desc":"F019601860142","cat":"freizeit"},{"id":2,"date":"2026-05-15","amount":1.3,"desc":"Crystal Springs Souvenirs Zypern","cat":"freizeit"},{"id":3,"date":"2026-05-15","amount":11.2,"desc":"Crystal Springs Souvenirs Zypern","cat":"freizeit"},{"id":4,"date":"2026-05-15","amount":56.9,"desc":"OTTO Payments GmbH","cat":"freizeit"},{"id":5,"date":"2026-05-15","amount":4.22,"desc":"REWE Schönefeld","cat":"essen"},{"id":6,"date":"2026-05-15","amount":17.1,"desc":"PayPal – congstar Telekom","cat":"fixkosten"},{"id":7,"date":"2026-05-15","amount":8.4,"desc":"DEVK Haftpflicht","cat":"fixkosten"},{"id":8,"date":"2026-05-15","amount":25.0,"desc":"DEVK Leben","cat":"fixkosten"},{"id":9,"date":"2026-05-15","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":10,"date":"2026-05-08","amount":1.96,"desc":"PayPal – Apple Services","cat":"fixkosten"},{"id":11,"date":"2026-05-08","amount":96.34,"desc":"DEVK Kfz-Versicherung MSE R 239","cat":"fixkosten"},{"id":12,"date":"2026-05-07","amount":5.88,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":13,"date":"2026-05-07","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":14,"date":"2026-05-05","amount":25.0,"desc":"PayPal","cat":"freizeit"},{"id":15,"date":"2026-05-05","amount":8.99,"desc":"Amazon Prime","cat":"fixkosten"},{"id":16,"date":"2026-05-05","amount":50.0,"desc":"Sparkasse Lose","cat":"fixkosten"},{"id":17,"date":"2026-05-04","amount":7.99,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":18,"date":"2026-05-04","amount":180.0,"desc":"LBS Nordost","cat":"sparen"},{"id":19,"date":"2026-05-04","amount":6.97,"desc":"Hannoversche Lebensversicherung","cat":"sparen"},{"id":20,"date":"2026-05-04","amount":25.53,"desc":"Allianz PrivRent InvestFlex","cat":"sparen"},{"id":23,"date":"2026-04-30","amount":318.1,"desc":"ING-DiBa Ratenkredit","cat":"fixkosten"},{"id":24,"date":"2026-04-30","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":26,"date":"2026-04-30","amount":500.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":27,"date":"2026-04-29","amount":2.38,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":29,"date":"2026-04-28","amount":10.49,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":30,"date":"2026-04-23","amount":17.99,"desc":"Amazon.de","cat":"einrichtung"},{"id":31,"date":"2026-04-21","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":32,"date":"2026-04-20","amount":116.23,"desc":"HEM Tankstelle Neubrandenburg","cat":"tank"},{"id":33,"date":"2026-04-20","amount":12.82,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":34,"date":"2026-04-20","amount":104.9,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":35,"date":"2026-04-20","amount":14.38,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":36,"date":"2026-04-20","amount":18.98,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":37,"date":"2026-04-17","amount":2.0,"desc":"Car Clean Center (Autowäsche)","cat":"tank"},{"id":38,"date":"2026-04-17","amount":6.0,"desc":"Car Clean Center (Autowäsche)","cat":"tank"},{"id":39,"date":"2026-04-16","amount":17.4,"desc":"Asia Sushi Neubrandenburg","cat":"essen"},{"id":40,"date":"2026-04-15","amount":17.1,"desc":"PayPal","cat":"fixkosten"},{"id":41,"date":"2026-04-15","amount":25.0,"desc":"DEVK Leben","cat":"fixkosten"},{"id":42,"date":"2026-04-15","amount":8.77,"desc":"DEVK Haftpflicht","cat":"fixkosten"},{"id":43,"date":"2026-04-14","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":44,"date":"2026-04-14","amount":2000.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":45,"date":"2026-04-14","amount":3000.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":46,"date":"2026-04-14","amount":2300.0,"desc":"Überweisung Thiele Luka","cat":"sparen"},{"id":47,"date":"2026-04-08","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":48,"date":"2026-04-08","amount":96.34,"desc":"DEVK Kfz-Versicherung MSE R 239","cat":"fixkosten"},{"id":49,"date":"2026-04-08","amount":10.61,"desc":"DEVK Kfz-Versicherung MSE LT 1","cat":"fixkosten"},{"id":50,"date":"2026-04-07","amount":63.75,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":51,"date":"2026-04-07","amount":139.35,"desc":"PayPal","cat":"freizeit"},{"id":53,"date":"2026-04-07","amount":50.0,"desc":"Sparkasse Lose","cat":"fixkosten"},{"id":54,"date":"2026-04-02","amount":220.0,"desc":"Geldautomat Filiale 407","cat":"freizeit"},{"id":55,"date":"2026-04-02","amount":8.99,"desc":"Amazon Prime","cat":"fixkosten"},{"id":56,"date":"2026-04-01","amount":6.97,"desc":"Hannoversche Lebensversicherung","cat":"sparen"},{"id":57,"date":"2026-04-01","amount":25.53,"desc":"Allianz PrivRent InvestFlex","cat":"sparen"},{"id":58,"date":"2026-04-01","amount":180.0,"desc":"LBS Nordost","cat":"sparen"},{"id":59,"date":"2026-03-31","amount":60.0,"desc":"BSG Webasto Mitgliedsbeitrag","cat":"freizeit"},{"id":60,"date":"2026-03-31","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":61,"date":"2026-03-30","amount":500.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":63,"date":"2026-03-30","amount":1.97,"desc":"Ablehnungsentgelt Überweisung","cat":"fixkosten"},{"id":65,"date":"2026-03-30","amount":318.1,"desc":"ING-DiBa Ratenkredit","cat":"fixkosten"},{"id":66,"date":"2026-03-27","amount":23.0,"desc":"Asia Sushi Neubrandenburg","cat":"essen"},{"id":68,"date":"2026-03-26","amount":14.99,"desc":"PayPal – FeneroFolio","cat":"fixkosten"},{"id":69,"date":"2026-03-24","amount":358.66,"desc":"PayPal","cat":"freizeit"},{"id":70,"date":"2026-03-23","amount":57.58,"desc":"OTTO Online Shop","cat":"freizeit"},{"id":71,"date":"2026-03-19","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":72,"date":"2026-03-18","amount":22.88,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":73,"date":"2026-03-18","amount":23.88,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":74,"date":"2026-03-17","amount":66.49,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":75,"date":"2026-03-16","amount":1000.0,"desc":"Überweisung Luka Thiele","cat":"sparen"},{"id":76,"date":"2026-03-13","amount":16.95,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":77,"date":"2026-03-13","amount":6.2,"desc":"DEVK Haftpflicht","cat":"fixkosten"},{"id":78,"date":"2026-03-13","amount":25.0,"desc":"DEVK Leben","cat":"fixkosten"},{"id":79,"date":"2026-03-12","amount":20.39,"desc":"PayPal","cat":"fixkosten"},{"id":80,"date":"2026-03-12","amount":17.0,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":81,"date":"2026-03-12","amount":6.99,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":82,"date":"2026-03-12","amount":7.18,"desc":"Rossmann Neubrandenburg","cat":"essen"},{"id":83,"date":"2026-03-12","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":84,"date":"2026-03-11","amount":8.48,"desc":"OBI Neubrandenburg","cat":"einrichtung"},{"id":85,"date":"2026-03-10","amount":18.06,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":86,"date":"2026-03-10","amount":25.4,"desc":"Stadt NB Kfz-Zulassung","cat":"fixkosten"},{"id":87,"date":"2026-03-10","amount":6.01,"desc":"PayPal","cat":"freizeit"},{"id":88,"date":"2026-03-10","amount":100.0,"desc":"PayPal","cat":"freizeit"},{"id":89,"date":"2026-03-10","amount":1.56,"desc":"Amazon Marketplace","cat":"einrichtung"},{"id":90,"date":"2026-03-09","amount":139.0,"desc":"PayPal","cat":"freizeit"},{"id":91,"date":"2026-03-06","amount":10.61,"desc":"DEVK Kfz-Versicherung MSE LT 1","cat":"fixkosten"},{"id":92,"date":"2026-03-06","amount":99.22,"desc":"DEVK Kfz-Versicherung MSE R 239","cat":"fixkosten"},{"id":93,"date":"2026-03-05","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":94,"date":"2026-03-05","amount":50.0,"desc":"Sparkasse Lose","cat":"fixkosten"},{"id":95,"date":"2026-03-03","amount":8.99,"desc":"Amazon Prime","cat":"fixkosten"},{"id":96,"date":"2026-03-03","amount":269.13,"desc":"Mueller, Laura – Miete März","cat":"fixkosten"},{"id":97,"date":"2026-03-02","amount":3.22,"desc":"Vodafone","cat":"fixkosten"},{"id":98,"date":"2026-03-02","amount":25.53,"desc":"Allianz PrivRent InvestFlex","cat":"sparen"},{"id":99,"date":"2026-03-02","amount":180.0,"desc":"LBS Nordost","cat":"sparen"},{"id":100,"date":"2026-03-02","amount":6.97,"desc":"Hannoversche Lebensversicherung","cat":"sparen"},{"id":101,"date":"2026-03-02","amount":1360.0,"desc":"Überweisung Urlaub","cat":"sparen"},{"id":102,"date":"2026-03-02","amount":500.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":104,"date":"2026-03-02","amount":2719.38,"desc":"AIDA Cruises Kreuzfahrt","cat":"urlaub"},{"id":106,"date":"2026-02-27","amount":318.1,"desc":"ING-DiBa Ratenkredit","cat":"fixkosten"},{"id":107,"date":"2026-02-26","amount":14.99,"desc":"PayPal – FeneroFolio","cat":"fixkosten"},{"id":108,"date":"2026-02-26","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":109,"date":"2026-02-25","amount":6.63,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":110,"date":"2026-02-24","amount":13.66,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":111,"date":"2026-02-24","amount":14.96,"desc":"IKEA Rostock","cat":"freizeit"},{"id":112,"date":"2026-02-24","amount":19.26,"desc":"Globus Sievershagen","cat":"essen"},{"id":113,"date":"2026-02-24","amount":1040.0,"desc":"Überweisung Urlaub","cat":"sparen"},{"id":114,"date":"2026-02-24","amount":169.9,"desc":"OTTO Online Shop","cat":"freizeit"},{"id":115,"date":"2026-02-23","amount":6.3,"desc":"Toom Baumarkt Neubrandenburg","cat":"freizeit"},{"id":116,"date":"2026-02-23","amount":65.0,"desc":"Wichmanns Neubrandenburg","cat":"freizeit"},{"id":117,"date":"2026-02-19","amount":82.0,"desc":"Trade Republic","cat":"sparen"},{"id":118,"date":"2026-02-18","amount":7.18,"desc":"Lidl Neubrandenburg","cat":"essen"},{"id":119,"date":"2026-02-17","amount":62.0,"desc":"Überweisung Luka Thiele","cat":"sparen"},{"id":120,"date":"2026-02-17","amount":50.0,"desc":"PayPal","cat":"freizeit"},{"id":121,"date":"2026-02-17","amount":50.0,"desc":"PayPal","cat":"freizeit"},{"id":122,"date":"2026-02-16","amount":23.82,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":123,"date":"2026-02-13","amount":25.0,"desc":"DEVK Leben","cat":"fixkosten"},{"id":124,"date":"2026-02-13","amount":6.2,"desc":"DEVK Haftpflicht","cat":"fixkosten"},{"id":125,"date":"2026-02-12","amount":130.0,"desc":"Überweisung Luka Thiele","cat":"sparen"},{"id":126,"date":"2026-02-12","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":127,"date":"2026-02-11","amount":11.85,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":128,"date":"2026-02-10","amount":16.32,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":129,"date":"2026-02-06","amount":105.0,"desc":"Scalable Capital","cat":"sparen"},{"id":130,"date":"2026-02-06","amount":713.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":131,"date":"2026-02-06","amount":99.22,"desc":"DEVK Kfz-Versicherung MSE R 239","cat":"fixkosten"},{"id":132,"date":"2026-02-06","amount":10.61,"desc":"DEVK Kfz-Versicherung MSE LT 1","cat":"fixkosten"},{"id":134,"date":"2026-02-05","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":135,"date":"2026-02-05","amount":50.0,"desc":"Sparkasse Lose","cat":"fixkosten"},{"id":136,"date":"2026-02-04","amount":53.63,"desc":"Kaufland Neubrandenburg","cat":"essen"},{"id":137,"date":"2026-02-03","amount":250.0,"desc":"Ronny Thiele","cat":"fixkosten"},{"id":138,"date":"2026-02-03","amount":15.98,"desc":"PayPal","cat":"freizeit"},{"id":139,"date":"2026-02-03","amount":8.99,"desc":"Amazon Prime","cat":"fixkosten"},{"id":140,"date":"2026-02-02","amount":50.0,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":141,"date":"2026-02-02","amount":180.0,"desc":"LBS Nordost","cat":"sparen"},{"id":142,"date":"2026-02-02","amount":6.97,"desc":"Hannoversche Lebensversicherung","cat":"sparen"},{"id":143,"date":"2026-02-02","amount":54.0,"desc":"ADAC Mitgliedsbeitrag","cat":"fixkosten"},{"id":144,"date":"2026-02-02","amount":26.75,"desc":"Allianz PrivRent InvestFlex","cat":"sparen"},{"id":145,"date":"2026-01-30","amount":31.8,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":146,"date":"2026-01-30","amount":51.59,"desc":"Lidl Neubrandenburg","cat":"essen"},{"id":148,"date":"2026-01-30","amount":500.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":149,"date":"2026-01-30","amount":318.1,"desc":"ING-DiBa Ratenkredit","cat":"fixkosten"},{"id":150,"date":"2026-01-29","amount":300.0,"desc":"Überweisung Luka Thiele","cat":"sparen"},{"id":151,"date":"2026-01-29","amount":500.0,"desc":"Überweisung Luka Thiele","cat":"sparen"},{"id":152,"date":"2026-01-29","amount":195.0,"desc":"Trade Republic","cat":"sparen"},{"id":153,"date":"2026-01-28","amount":25.8,"desc":"Vodafone","cat":"fixkosten"},{"id":155,"date":"2026-01-27","amount":14.99,"desc":"PayPal – FeneroFolio","cat":"fixkosten"},{"id":156,"date":"2026-01-26","amount":20.0,"desc":"Scalable Capital","cat":"sparen"},{"id":157,"date":"2026-01-22","amount":104.0,"desc":"Eyes and More Neubrandenburg","cat":"freizeit"},{"id":158,"date":"2026-01-16","amount":30.39,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":159,"date":"2026-01-15","amount":6.2,"desc":"DEVK Haftpflicht","cat":"fixkosten"},{"id":160,"date":"2026-01-15","amount":25.0,"desc":"DEVK Leben","cat":"fixkosten"},{"id":161,"date":"2026-01-15","amount":49.4,"desc":"PayPal","cat":"freizeit"},{"id":162,"date":"2026-01-12","amount":15.95,"desc":"Apotheke Gaetenbach","cat":"freizeit"},{"id":163,"date":"2026-01-12","amount":11.55,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":164,"date":"2026-01-12","amount":287.35,"desc":"Resort Linstow","cat":"urlaub"},{"id":165,"date":"2026-01-08","amount":200.0,"desc":"Ronny Thiele","cat":"fixkosten"},{"id":166,"date":"2026-01-08","amount":2.99,"desc":"PayPal","cat":"fixkosten"},{"id":167,"date":"2026-01-07","amount":5.76,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":168,"date":"2026-01-07","amount":10.0,"desc":"Trade Republic","cat":"sparen"},{"id":169,"date":"2026-01-06","amount":10.0,"desc":"PayPal","cat":"freizeit"},{"id":170,"date":"2026-01-06","amount":6.97,"desc":"Hannoversche Lebensversicherung","cat":"sparen"},{"id":172,"date":"2026-01-05","amount":8.99,"desc":"Amazon Prime","cat":"fixkosten"},{"id":173,"date":"2026-01-05","amount":50.0,"desc":"Sparkasse Lose","cat":"fixkosten"},{"id":174,"date":"2026-01-02","amount":190.0,"desc":"Überweisung Luka Thiele","cat":"sparen"},{"id":175,"date":"2026-01-02","amount":10.61,"desc":"DEVK Kfz-Versicherung MSE LT 1","cat":"fixkosten"},{"id":176,"date":"2026-01-02","amount":99.22,"desc":"DEVK Kfz-Versicherung MSE R 239","cat":"fixkosten"},{"id":177,"date":"2026-01-02","amount":140.0,"desc":"LBS Nordost","cat":"sparen"},{"id":178,"date":"2026-01-02","amount":24.31,"desc":"Allianz PrivRent InvestFlex","cat":"sparen"},{"id":179,"date":"2025-12-30","amount":50.14,"desc":"OIL 234 Tankstelle Neubrandenburg","cat":"tank"},{"id":180,"date":"2025-12-30","amount":60.96,"desc":"Lidl Neubrandenburg","cat":"essen"},{"id":182,"date":"2025-12-30","amount":318.1,"desc":"ING-DiBa Ratenkredit","cat":"fixkosten"},{"id":184,"date":"2025-12-30","amount":500.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":185,"date":"2025-12-30","amount":49.99,"desc":"Vodafone","cat":"fixkosten"},{"id":186,"date":"2025-12-30","amount":14.99,"desc":"PayPal – FeneroFolio","cat":"fixkosten"},{"id":187,"date":"2025-12-30","amount":4.99,"desc":"Netflix","cat":"fixkosten"},{"id":188,"date":"2025-12-29","amount":117.75,"desc":"Veranstaltungszentrum Neubrandenburg","cat":"freizeit"},{"id":189,"date":"2025-12-29","amount":118.0,"desc":"PayPal","cat":"freizeit"},{"id":190,"date":"2025-12-29","amount":62.0,"desc":"Trade Republic","cat":"sparen"},{"id":191,"date":"2025-12-29","amount":13.98,"desc":"Globus Neubrandenburg","cat":"essen"},{"id":192,"date":"2025-12-29","amount":10.0,"desc":"Trade Republic","cat":"sparen"},{"id":193,"date":"2025-12-29","amount":130.9,"desc":"ADAC Versicherung Rechtsschutz","cat":"fixkosten"},{"id":194,"date":"2025-12-23","amount":54.76,"desc":"Kaufland Neubrandenburg","cat":"essen"},{"id":602,"date":"2026-05-18","amount":30.0,"desc":"Cafe Neutor Neubrandenburg","cat":"essen"},{"id":603,"date":"2026-05-19","amount":3.99,"desc":"Globus Neubrandenburg","cat":"essen"},{"id":604,"date":"2026-05-19","amount":22.0,"desc":"PayPal – Apple Services","cat":"fixkosten"},{"id":605,"date":"2026-05-19","amount":47.0,"desc":"PayPal","cat":"freizeit"},{"id":606,"date":"2026-05-20","amount":20.0,"desc":"PayPal","cat":"freizeit"},{"id":607,"date":"2026-05-20","amount":7.5,"desc":"PayPal Rückzahlung batterium","cat":"einnahmen"},{"id":608,"date":"2026-05-21","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":609,"date":"2026-05-26","amount":2.4,"desc":"Parkticket Marktplatz Neubrandenburg","cat":"freizeit"},{"id":610,"date":"2026-05-26","amount":3.5,"desc":"Heide Park Grill Soltau","cat":"freizeit"},{"id":611,"date":"2026-05-26","amount":10.6,"desc":"Wolsdorff Tobacco/Lotto","cat":"freizeit"},{"id":612,"date":"2026-05-26","amount":12.0,"desc":"PayPal","cat":"freizeit"},{"id":613,"date":"2026-05-26","amount":14.99,"desc":"PayPal – FeneroFolio","cat":"fixkosten"},{"id":614,"date":"2026-05-28","amount":20.0,"desc":"Ricky Woellert","cat":"freizeit"},{"id":615,"date":"2026-05-28","amount":2778.0,"desc":"Gehalt Mai – Webasto","cat":"einnahmen"},{"id":616,"date":"2026-05-29","amount":20.0,"desc":"Trade Republic","cat":"sparen"},{"id":617,"date":"2026-05-29","amount":318.1,"desc":"ING-DiBa Ratenkredit","cat":"fixkosten"},{"id":618,"date":"2026-05-29","amount":100.0,"desc":"Bargeldauszahlung","cat":"freizeit"},{"id":619,"date":"2026-06-01","amount":7.27,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":620,"date":"2026-06-01","amount":25.53,"desc":"Allianz PrivRent InvestFlex","cat":"sparen"},{"id":621,"date":"2026-06-01","amount":30.0,"desc":"PayPal – Megapixel Entertainment","cat":"freizeit"},{"id":622,"date":"2026-06-01","amount":6.97,"desc":"Hannoversche Lebensversicherung","cat":"sparen"},{"id":623,"date":"2026-06-01","amount":180.0,"desc":"LBS Nordost","cat":"sparen"},{"id":624,"date":"2026-06-01","amount":120.0,"desc":"Bargeldauszahlung","cat":"freizeit"},{"id":625,"date":"2026-06-01","amount":500.0,"desc":"Überweisung Trade Republic","cat":"sparen"},{"id":626,"date":"2026-06-01","amount":7.9,"desc":"Entgeltabrechnung Sparkasse","cat":"fixkosten"},{"id":627,"date":"2026-06-02","amount":8.99,"desc":"Amazon Prime","cat":"fixkosten"},{"id":628,"date":"2026-06-03","amount":10.11,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":629,"date":"2026-06-04","amount":50.0,"desc":"Sparkasse Lose","cat":"fixkosten"},{"id":630,"date":"2026-06-05","amount":96.34,"desc":"DEVK Kfz-Versicherung MSE R 239","cat":"fixkosten"},{"id":631,"date":"2026-06-05","amount":8.4,"desc":"DEVK Haftpflicht","cat":"fixkosten"},{"id":632,"date":"2026-06-05","amount":25.0,"desc":"DEVK Leben","cat":"sparen"},{"id":633,"date":"2026-06-05","amount":20.0,"desc":"Trade Republic","cat":"sparen"}];
+const P_INCOME=[{"id":300,"date":"2025-12-29","amount":2791.0,"desc":"Gehalt Dezember – Webasto","cat":"einnahmen"},{"id":301,"date":"2026-01-29","amount":2708.0,"desc":"Gehalt Januar – Webasto","cat":"einnahmen"},{"id":302,"date":"2026-02-26","amount":2788.0,"desc":"Gehalt Februar – Webasto","cat":"einnahmen"},{"id":303,"date":"2026-03-30","amount":3149.0,"desc":"Gehalt März – Webasto","cat":"einnahmen"},{"id":304,"date":"2026-04-29","amount":2778.0,"desc":"Gehalt April – Webasto","cat":"einnahmen"},{"id":305,"date":"2026-03-02","amount":1360.0,"desc":"Mueller, Laura – Urlaub AIDA Kanaren","cat":"einnahmen"},{"id":306,"date":"2026-02-18","amount":1040.0,"desc":"Mueller, Laura – Zypern Urlaub","cat":"einnahmen"},{"id":307,"date":"2026-02-25","amount":197.0,"desc":"Mueller, Laura – Skiausrüstung","cat":"einnahmen"},{"id":308,"date":"2026-04-24","amount":335.0,"desc":"Lea Thiele – Möbel","cat":"einnahmen"},{"id":309,"date":"2026-03-23","amount":360.0,"desc":"Bernd & Ilona Thiele – Cliff Hotel Sellin","cat":"einnahmen"},{"id":310,"date":"2026-01-14","amount":650.0,"desc":"SB-Einzahlung Bargeld","cat":"einnahmen"},{"id":311,"date":"2026-03-05","amount":290.0,"desc":"SB-Einzahlung Bargeld","cat":"einnahmen"},{"id":312,"date":"2026-03-23","amount":100.0,"desc":"SB-Einzahlung Bargeld","cat":"einnahmen"},{"id":313,"date":"2026-04-20","amount":325.0,"desc":"SB-Einzahlung Bargeld","cat":"einnahmen"},{"id":314,"date":"2026-04-14","amount":7300.0,"desc":"Motorrad Verkauf","cat":"sonstiges"},{"id":315,"date":"2026-05-04","amount":20.0,"desc":"KFZ-Steuer Erstattung Bundeskasse","cat":"einnahmen"},{"id":316,"date":"2026-04-15","amount":6.01,"desc":"DEVK Versicherung – Guthaben","cat":"einnahmen"},{"id":317,"date":"2026-03-25","amount":2.11,"desc":"DEVK Versicherung – Guthaben","cat":"einnahmen"},{"id":318,"date":"2026-03-17","amount":2.5,"desc":"Sparkasse – PS-Lose Gewinn","cat":"einnahmen"},{"id":319,"date":"2026-01-14","amount":100.0,"desc":"Amt Neverin – Erstattung","cat":"einnahmen"},{"id":320,"date":"2026-01-02","amount":156.0,"desc":"PayPal Rückzahlung","cat":"einnahmen"},{"id":321,"date":"2026-02-02","amount":33.0,"desc":"PayPal Rückzahlung","cat":"einnahmen"},{"id":322,"date":"2026-04-27","amount":130.01,"desc":"PayPal Rückzahlung","cat":"einnahmen"}];
+const CC_IMPORTED=[{"id":400,"date":"2026-05-10","amount":10.0,"desc":"Paralimni Beach Zypern","cat":"urlaub"},{"id":401,"date":"2026-04-13","amount":49.9,"desc":"Kennzeichen.click","cat":"freizeit"},{"id":402,"date":"2026-04-11","amount":233.1,"desc":"AIDA Cruises","cat":"urlaub"},{"id":403,"date":"2026-04-09","amount":1564.6,"desc":"Rumbo – Zypern Hotel/Flug","cat":"urlaub"},{"id":404,"date":"2026-04-06","amount":32.0,"desc":"Telefericos Madeira","cat":"urlaub"},{"id":405,"date":"2026-04-02","amount":107.0,"desc":"HEM Tankstelle Neubrandenburg","cat":"tank"},{"id":406,"date":"2026-03-09","amount":88.84,"desc":"Tankstelle Kolbaskowo Polen","cat":"urlaub"},{"id":407,"date":"2026-03-09","amount":11.86,"desc":"Tankstelle Hyperoil Polen","cat":"urlaub"},{"id":408,"date":"2026-03-08","amount":1.0,"desc":"Lotto24","cat":"freizeit"},{"id":409,"date":"2026-03-08","amount":254.0,"desc":"IKEA Polen","cat":"urlaub"},{"id":410,"date":"2026-03-08","amount":38.89,"desc":"Lieferando","cat":"essen"},{"id":411,"date":"2026-03-08","amount":46.68,"desc":"Kaufland Marketplace","cat":"einrichtung"},{"id":412,"date":"2026-02-26","amount":83.99,"desc":"Parkos – Flughafenparken","cat":"einnahmen"},{"id":413,"date":"2026-02-23","amount":199.0,"desc":"XXXLutz","cat":"einrichtung"},{"id":414,"date":"2026-02-17","amount":515.87,"desc":"Rumbo – Zypern Hotel/Flug","cat":"urlaub"},{"id":415,"date":"2026-02-09","amount":103.37,"desc":"HEM Tankstelle Neubrandenburg","cat":"tank"},{"id":416,"date":"2026-01-17","amount":108.09,"desc":"Shell Tankstelle Mölln","cat":"tank"},{"id":417,"date":"2026-01-14","amount":20.02,"desc":"HEM Tankstelle Neubrandenburg","cat":"tank"},{"id":418,"date":"2025-12-27","amount":50.03,"desc":"Aral Tankstelle Neubrandenburg","cat":"tank"},
+{"id":419,"date":"2026-05-15","amount":40.01,"desc":"HEM Tankstelle Neubrandenburg","cat":"tank"},
+{"id":420,"date":"2026-05-25","amount":102.28,"desc":"HEM Tankstelle Neubrandenburg","cat":"tank"}];
+const J_IMPORTED=[{"id":1,"date":"2026-05-13","amount":2.4,"desc":"Kiosk Zypern","cat":"urlaub"},{"id":2,"date":"2026-05-13","amount":12.0,"desc":"Star Leisure Zypern","cat":"urlaub"},{"id":3,"date":"2026-05-13","amount":11.3,"desc":"Supermarkt Zypern","cat":"urlaub"},{"id":4,"date":"2026-05-08","amount":8.89,"desc":"Aldi Nord","cat":"essen"},{"id":5,"date":"2026-05-06","amount":22.48,"desc":"Aldi Nord","cat":"essen"},{"id":6,"date":"2026-05-05","amount":4.99,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":7,"date":"2026-05-05","amount":3.77,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":8,"date":"2026-05-05","amount":37.83,"desc":"Aldi Nord","cat":"essen"},{"id":9,"date":"2026-05-05","amount":13.0,"desc":"Imbiss My Döner","cat":"essen"},{"id":10,"date":"2026-05-05","amount":12.18,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":11,"date":"2026-05-04","amount":13.96,"desc":"Provinzial Hausratversicherung","cat":"fixkosten"},{"id":12,"date":"2026-05-04","amount":825.0,"desc":"Neubrandenburger Wohnungsgesellschaft – Miete","cat":"miete"},{"id":13,"date":"2026-04-30","amount":30.0,"desc":"Stadtwerke Neubrandenburg – Strom","cat":"fixkosten"},{"id":14,"date":"2026-04-29","amount":14.43,"desc":"Aldi Nord","cat":"essen"},{"id":15,"date":"2026-04-29","amount":24.19,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":16,"date":"2026-04-28","amount":67.46,"desc":"Globus Markthalle","cat":"essen"},{"id":17,"date":"2026-04-28","amount":7.0,"desc":"Globus Markthalle","cat":"essen"},{"id":18,"date":"2026-04-28","amount":70.97,"desc":"Bauking Baumarkt","cat":"einrichtung"},{"id":19,"date":"2026-04-28","amount":6.0,"desc":"McDonald's","cat":"essen"},{"id":20,"date":"2026-04-28","amount":75.0,"desc":"Argentinisches Steakhouse","cat":"essen"},{"id":21,"date":"2026-04-27","amount":50.19,"desc":"1+1 Telecom – Internet","cat":"fixkosten"},{"id":22,"date":"2026-04-24","amount":3.88,"desc":"Globus Markthalle","cat":"essen"},{"id":23,"date":"2026-04-23","amount":4.78,"desc":"Aldi Nord","cat":"essen"},{"id":24,"date":"2026-04-23","amount":2.78,"desc":"Aldi Nord","cat":"essen"},{"id":25,"date":"2026-04-21","amount":0.58,"desc":"Globus Markthalle","cat":"essen"},{"id":26,"date":"2026-04-21","amount":6.03,"desc":"Globus Markthalle","cat":"essen"},{"id":27,"date":"2026-04-21","amount":16.92,"desc":"Aldi Nord","cat":"essen"},{"id":28,"date":"2026-04-20","amount":30.35,"desc":"Kaufland Neubrandenburg","cat":"essen"},{"id":29,"date":"2026-04-15","amount":9.78,"desc":"Aldi Nord","cat":"essen"},{"id":30,"date":"2026-04-15","amount":11.92,"desc":"Aldi Nord","cat":"essen"},{"id":31,"date":"2026-04-15","amount":28.39,"desc":"Globus Markthalle","cat":"essen"},{"id":32,"date":"2026-04-15","amount":8.34,"desc":"Globus Markthalle","cat":"essen"},{"id":33,"date":"2026-04-15","amount":55.08,"desc":"Rundfunk ARD/ZDF/DRadio","cat":"fixkosten"},{"id":34,"date":"2026-04-14","amount":11.18,"desc":"Lidl Hamburg","cat":"essen"},{"id":35,"date":"2026-04-07","amount":825.0,"desc":"Neubrandenburger Wohnungsgesellschaft – Miete","cat":"miete"},{"id":36,"date":"2026-04-01","amount":61.11,"desc":"Aldi Nord","cat":"essen"},{"id":37,"date":"2026-04-01","amount":13.96,"desc":"Provinzial Hausratversicherung","cat":"fixkosten"},{"id":38,"date":"2026-04-01","amount":82.66,"desc":"Provinzial Haftpflicht","cat":"fixkosten"},{"id":39,"date":"2026-03-31","amount":30.0,"desc":"Stadtwerke Neubrandenburg – Strom","cat":"fixkosten"},{"id":40,"date":"2026-03-30","amount":20.78,"desc":"Aldi Nord","cat":"essen"},{"id":41,"date":"2026-03-27","amount":1.96,"desc":"Provinzial Hausratversicherung","cat":"fixkosten"},{"id":42,"date":"2026-03-25","amount":7.58,"desc":"OBI Neubrandenburg","cat":"einrichtung"},{"id":43,"date":"2026-03-25","amount":99.94,"desc":"1+1 Telecom – Internet","cat":"fixkosten"},{"id":44,"date":"2026-03-24","amount":32.88,"desc":"Aldi Nord","cat":"essen"},{"id":45,"date":"2026-03-24","amount":62.72,"desc":"Globus Markthalle","cat":"essen"},{"id":46,"date":"2026-03-17","amount":88.2,"desc":"Kaufland Neubrandenburg","cat":"essen"},{"id":47,"date":"2026-03-17","amount":23.5,"desc":"JYSK Neubrandenburg","cat":"einrichtung"},{"id":48,"date":"2026-03-17","amount":19.59,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":500,"date":"2026-05-01","amount":1.19,"desc":"Netto Marken-Discount Neubrandenburg","cat":"essen"},{"id":501,"date":"2026-05-01","amount":3.08,"desc":"Globus Markthalle Neubrandenburg","cat":"essen"},{"id":502,"date":"2026-05-13","amount":3.5,"desc":"CY Airports Duty Free Zypern","cat":"urlaub"},{"id":503,"date":"2026-05-13","amount":9.5,"desc":"Coral PS47 Larnaca Zypern","cat":"urlaub"},{"id":504,"date":"2026-05-13","amount":55.5,"desc":"Crystal Springs Reception Famagusta","cat":"urlaub"},{"id":505,"date":"2026-05-13","amount":1.8,"desc":"Systembolaget Famagusta","cat":"urlaub"},{"id":506,"date":"2026-05-13","amount":30.0,"desc":"Ocean Aquarium Park Famagusta","cat":"urlaub"},{"id":507,"date":"2026-05-13","amount":30.85,"desc":"International Supermarket Famagusta","cat":"urlaub"},{"id":508,"date":"2026-05-13","amount":3.15,"desc":"Crystal Springs Souvenir Famagusta","cat":"urlaub"},{"id":516,"date":"2026-05-19","amount":1.19,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":517,"date":"2026-05-19","amount":3.08,"desc":"Globus Markthalle","cat":"essen"},{"id":518,"date":"2026-05-20","amount":4.98,"desc":"Aldi Nord","cat":"essen"},{"id":519,"date":"2026-05-27","amount":78.19,"desc":"Netto Neubrandenburg","cat":"essen"},{"id":520,"date":"2026-05-27","amount":13.43,"desc":"Globus Markthalle","cat":"essen"},{"id":521,"date":"2026-05-27","amount":50.49,"desc":"1+1 Telecom – Internet","cat":"fixkosten"},{"id":522,"date":"2026-05-29","amount":30.0,"desc":"Stadtwerke Neubrandenburg – Strom","cat":"fixkosten"},{"id":523,"date":"2026-06-01","amount":13.96,"desc":"Provinzial Hausratversicherung","cat":"fixkosten"},{"id":524,"date":"2026-06-03","amount":825.0,"desc":"Neubrandenburger Wohnungsgesellschaft – Miete","cat":"miete"},{"id":525,"date":"2026-06-03","amount":20.38,"desc":"Aldi Nord","cat":"essen"},{"id":526,"date":"2026-06-05","amount":11.35,"desc":"REWE Neubrandenburg","cat":"essen"},{"id":527,"date":"2026-06-05","amount":1.97,"desc":"Globus Markthalle","cat":"essen"}];
+
+const P_CATS=[
+  {id:'essen',     label:'Essen',        color:'#1D9E75', limit:300},
+  {id:'freizeit',  label:'Freizeit',     color:'#7F77DD', limit:220},
+  {id:'urlaub',    label:'Urlaub',       color:'#D4537E', limit:null},
+  {id:'tank',      label:'Tank',         color:'#BA7517', limit:150},
+  {id:'einrichtung',label:'Einrichtung', color:'#D85A30', limit:null},
+  {id:'fixkosten', label:'Fixkosten',    color:'#378ADD', limit:null},
+  {id:'sparen',    label:'Sparen',       color:'#639922', limit:null},
+  {id:'sonstiges', label:'Sonstiges',    color:'#888780', limit:null},
+  {id:'einnahmen', label:'Einnahmen',    color:'#3B6D11', limit:null},
+];
+const J_CATS=[
+  {id:'essen',      label:'Einkauf',            color:'#1D9E75', limit:500},
+  {id:'miete',      label:'Miete',              color:'#378ADD', limit:null},
+  {id:'fixkosten',  label:'Fixkosten',           color:'#5F5E5A', limit:null},
+  {id:'urlaub',     label:'Urlaub',             color:'#D4537E', limit:null},
+  {id:'einrichtung',label:'Einrichtung',         color:'#D85A30', limit:null},
+  {id:'freizeit',   label:'Gemeinsam Freizeit', color:'#7F77DD', limit:null},
+];
+const PCM={};P_CATS.forEach(c=>PCM[c.id]=c);
+const JCM={};J_CATS.forEach(c=>JCM[c.id]=c);
+const CUTDAY=22,SPLIT=0.5;
+
+function saveP(){try{localStorage.setItem('fin_p',JSON.stringify(pEntries));}catch(e){}}
+function saveJ(){try{localStorage.setItem('fin_j',JSON.stringify(jEntries));}catch(e){}}
+function saveNotes(acc){try{localStorage.setItem(acc==='p'?'fin_pnotes':'fin_jnotes',JSON.stringify(acc==='p'?pNotes:jNotes));}catch(e){}}
+function fmt(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u00a0\u20ac';}
+function r2(n){return Math.round(n*100)/100;}
+function dateToPeriod(d){const day=d.getDate(),m=d.getMonth(),y=d.getFullYear();if(day<CUTDAY)return{y,m};const nm=m+1>11?0:m+1,ny=m+1>11?y+1:y;return{y:ny,m:nm};}
+function periodStart(p){const pm=p.m===0?11:p.m-1,py=p.m===0?p.y-1:p.y;return new Date(py,pm,CUTDAY);}
+function periodEnd(p){return new Date(p.y,p.m,CUTDAY-1);}
+function periodLabel(p){return new Date(p.y,p.m,1).toLocaleDateString('de-DE',{month:'long',year:'numeric'});}
+function periodKey(p){return p.y+'-'+String(p.m+1).padStart(2,'0');}
+function inPeriod(ds,p){const d=new Date(ds+'T00:00:00');return d>=periodStart(p)&&d<=periodEnd(p);}
+function periodFromKey(k){const[y,m]=k.split('-').map(Number);return{y,m:m-1};}
+function rangeStr(p){const s=periodStart(p),e=periodEnd(p);return s.toLocaleDateString('de-DE',{day:'numeric',month:'short'})+' \u2013 '+e.toLocaleDateString('de-DE',{day:'numeric',month:'short',year:'numeric'});}
+
+let pEntries=[],jEntries=[],pNotes=[],jNotes=[];
+let pPeriod=dateToPeriod(new Date()),jPeriod=dateToPeriod(new Date());
+let pFilter='all',jFilter='all',pPie=null,jPie=null;
+
+try{pEntries=JSON.parse(localStorage.getItem('fin_p')||'null')||[];}catch(e){}
+try{jEntries=JSON.parse(localStorage.getItem('fin_j')||'null')||[];}catch(e){}
+try{pNotes=JSON.parse(localStorage.getItem('fin_pnotes')||'[]');}catch(e){}
+try{jNotes=JSON.parse(localStorage.getItem('fin_jnotes')||'[]');}catch(e){}
+
+function migrateEntries(){
+  const urlaubKw=['zypern','cyprus','paralimni','famagusta','rotaras','madrid','brixen','szczecin','kolbaskowo','groningen','amsterdam','mallorca','ibiza','tenerife','kanaren','kreta','rhodos','korfu','dubai','bangkok','phuket','bali','rumbo','airbnb','ryanair','easyjet','lufthansa','eurowings','condor','tuifly','flughafen','telefericos','seilbahn','mietwagen','sixt','europcar','hertz','avis','resort ','hotel '];
+  [pEntries,jEntries].forEach(arr=>arr.forEach(e=>{if(!['sparen','einnahmen','sonstiges','urlaub'].includes(e.cat)&&urlaubKw.some(k=>e.desc.toLowerCase().includes(k))){e.cat='urlaub';}}));
+  pEntries.forEach(e=>{
+    if(e.cat==='freizeit'&&['amazon marketplace','amazon.de','obi neubrandenburg','toom baumarkt'].some(k=>e.desc.toLowerCase().includes(k)))e.cat='einrichtung';
+    if(e.cat==='fixkosten'&&e.desc.toLowerCase().includes('devk leben'))e.cat='sparen';
+    if(e.id===314)e.cat='sonstiges';
+  });
+  jEntries.forEach(e=>{if((e.cat==='freizeit'||e.cat==='fixkosten')&&['bauking','jysk','obi neubrandenburg'].some(k=>e.desc.toLowerCase().includes(k)))e.cat='einrichtung';});
+  pEntries=pEntries.filter(e=>!e.desc.toLowerCase().includes('jährliche beiträge')&&!e.desc.toLowerCase().includes('ing gemeinschaftskonto')&&!(e.desc.toLowerCase().includes('sichteinlagen')&&e.cat==='sparen'));
+  pEntries=pEntries.filter(e=>!e.desc.toLowerCase().includes('mastercard kreditkartenabrechnung'));
+}
+
+if(!pEntries.length){pEntries=[...P_IMPORTED];saveP();}
+if(!jEntries.length){jEntries=[...J_IMPORTED];saveJ();}
+const _jIds=new Set(jEntries.map(e=>e.id));
+J_IMPORTED.filter(e=>!_jIds.has(e.id)).forEach(e=>jEntries.push(e));
+saveJ();
+const _ids=new Set(pEntries.map(e=>e.id));
+[...P_INCOME,...CC_IMPORTED].filter(e=>!_ids.has(e.id)).forEach(e=>pEntries.push(e));
+migrateEntries();
+const _seen=new Map();pEntries.forEach(e=>_seen.set(e.id,e));pEntries=Array.from(_seen.values());
+saveP();
+
+if(!pNotes.find(n=>n.id==='einzug-2026-03')){
+  pNotes.push({id:'einzug-2026-03',period:'2026-03',text:'\ud83d\udccb Einzug: ~3.121\u20ac gesamt, dein Anteil ~1.561\u20ac (IKEA, K\u00fcche, Sp\u00fcler+Kochfeld, Ninja Ofen, Kaution, M\u00f6bel, Gleitscharnier)',date:'2026-03-01'});
+  saveNotes('p');
+}
+
+function switchAccount(acc){
+  document.querySelectorAll('.acc-btn').forEach((b,i)=>b.classList.toggle('active',['personal','joint'][i]===acc));
+  document.getElementById('account-personal').style.display=acc==='personal'?'':'none';
+  document.getElementById('account-joint').style.display=acc==='joint'?'':'none';
+  renderOverview(acc==='personal'?'p':'j');
+}
+function switchTab(acc,name){
+  const tabs=['overview','add','entries','templates','import'];
+  document.querySelectorAll('#account-'+(acc==='p'?'personal':'joint')+' .tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===name));
+  tabs.forEach(t=>{const el=document.getElementById(acc+'-tab-'+t);if(el)el.classList.toggle('active',t===name);});
+  if(name==='overview'){renderOverview(acc);checkMonthlyDialog(acc);}
+  if(name==='entries')renderEntries(acc);
+  if(name==='templates')renderTemplates(acc);
+}
+function changeMonth(acc,d){
+  if(acc==='p'){let{y,m}=pPeriod;m+=d;if(m>11){m=0;y++;}if(m<0){m=11;y--;}pPeriod={y,m};}
+  else{let{y,m}=jPeriod;m+=d;if(m>11){m=0;y++;}if(m<0){m=11;y--;}jPeriod={y,m};}
+  renderOverview(acc);
+}
+
+function renderOverview(acc){
+  const isP=acc==='p',period=isP?pPeriod:jPeriod,entries=isP?pEntries:jEntries,cats=isP?P_CATS:J_CATS;
+  document.getElementById(acc+'-ml-name').textContent=periodLabel(period);
+  document.getElementById(acc+'-ml-range').textContent=rangeStr(period);
+  const me=entries.filter(e=>inPeriod(e.date,period));
+  const bycat={};cats.forEach(c=>bycat[c.id]=0);
+  me.forEach(e=>bycat[e.cat]=(bycat[e.cat]||0)+e.amount);
+  let usedMe=me,usedBycat={...bycat};
+  if(isP){
+    const jToPCat={essen:'essen',miete:'fixkosten',fixkosten:'fixkosten',urlaub:'urlaub',freizeit:'freizeit',einrichtung:'einrichtung'};
+    const virtualJoint=jEntries.filter(e=>inPeriod(e.date,period)).map(e=>({id:'j-'+e.id,date:e.date,amount:r2(e.amount*SPLIT),desc:e.desc+' (50%)',cat:jToPCat[e.cat]||'fixkosten',isJoint:true}));
+    usedMe=[...me,...virtualJoint];
+    usedBycat={...bycat};
+    virtualJoint.forEach(e=>usedBycat[e.cat]=(usedBycat[e.cat]||0)+e.amount);
+  }
+  const alerts=[];
+  const cards=cats.map(cat=>{
+    const spent=r2(usedBycat[cat.id]||0),lim=cat.limit;
+    let track='',rem='';
+    if(lim){
+      const pct=Math.min(Math.round(spent/lim*100),100),over=spent>lim,warn=!over&&pct>=80;
+      const bc=over?'#E24B4A':warn?'#EF9F27':cat.color;
+      track='<div class="bcard-track"><div class="bcard-fill" style="width:'+pct+'%;background:'+bc+';"></div></div>';
+      rem='<div class="bcard-rem '+(over?'over':warn?'warn':'ok')+'">'+(over?'\u26a0 '+fmt(r2(spent-lim))+' \u00fcber Limit':'Noch '+fmt(r2(lim-spent))+' ('+pct+'%)')+'</div>';
+      if(over)alerts.push({type:'over',label:cat.label,spent,lim});
+      else if(warn)alerts.push({type:'warn',label:cat.label,spent,lim,pct});
+    }
+    const catEntries=usedMe.filter(e=>e.cat===cat.id).sort((a,b)=>b.date.localeCompare(a.date));
+    const entryRows=catEntries.map(e=>{
+      const dateStr=new Date(e.date+'T00:00:00').toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'});
+      const prefix=e.isJoint?'\ud83c\udfe0 ':'';
+      return '<div class="bcard-entry-row" style="'+(e.isJoint?'opacity:.7':'')+'"><span class="bcard-entry-name">'+prefix+e.desc+'<span class="bcard-entry-meta">'+dateStr+'</span></span><span class="bcard-entry-amt">'+fmt(e.amount)+'</span></div>';
+    }).join('');
+    const dropId='drop-'+acc+'-'+cat.id;
+    return '<div class="bcard" onclick="toggleDrop(\''+dropId+'\')">'
+      +'<div class="bcard-top"><div class="bcard-dot" style="background:'+cat.color+';"></div><div class="bcard-name">'+cat.label+'</div><span class="bcard-toggle" id="'+dropId+'-arrow">\u25bc</span></div>'
+      +'<div class="bcard-spent">'+fmt(spent)+'</div>'
+      +'<div class="bcard-limit">'+(lim?'Limit '+fmt(lim):'Nur \u00dcbersicht')+'</div>'
+      +track+rem
+      +(catEntries.length?'<div class="bcard-entries" id="'+dropId+'">'+entryRows+'</div>':'')
+      +'</div>';
+  }).join('');
+  document.getElementById(acc+'-budget-cards').innerHTML=cards;
+  document.getElementById(acc+'-alerts').innerHTML=alerts.length?'<div style="margin-bottom:1rem;">'+alerts.map(a=>'<div class="alert-bar '+a.type+'">'+(a.type==='over'?'\u26a0':'!')+'  <strong>'+a.label+'</strong>: '+(a.type==='over'?fmt(a.spent)+' \u2014 Limit \u00fcberschritten!':a.pct+'% verbraucht')+'</div>').join('')+'</div>':'';
+  if(isP){
+    const income=r2((usedBycat['einnahmen']||0)+(usedBycat['sonstiges']||0));
+    const nonS=cats.filter(c=>!['einnahmen','sonstiges'].includes(c.id)).reduce((s,c)=>s+(usedBycat[c.id]||0),0);
+    const balance=r2(income-nonS);
+    document.getElementById('p-income').textContent=income>0?fmt(income):'—';
+    document.getElementById('p-total').textContent=fmt(r2(nonS));
+    const balEl=document.getElementById('p-balance');
+    balEl.textContent=income>0?fmt(balance):'—';
+    balEl.style.color=balance>=0?'#3B6D11':'#A32D2D';
+    document.getElementById('p-saved').textContent=usedBycat['sparen']>0?fmt(r2(usedBycat['sparen'])):'—';
+  }else{
+    const total=cats.reduce((s,c)=>s+(usedBycat[c.id]||0),0);
+    const jIncome=1600;
+    const jBalance=r2(jIncome-total);
+    document.getElementById('j-total').textContent=fmt(r2(total));
+    document.getElementById('j-share').textContent=fmt(r2(total*SPLIT));
+    const jBalEl=document.getElementById('j-balance');
+    if(jBalEl){jBalEl.textContent=fmt(jBalance);jBalEl.style.color=jBalance>=0?'#3B6D11':'#A32D2D';}
+  }
+  renderNotes(acc);
+  const pieId=acc+'-pieChart';
+  if(acc==='p'&&pPie){pPie.destroy();pPie=null;}
+  if(acc==='j'&&jPie){jPie.destroy();jPie=null;}
+  const cdata=cats.filter(c=>!['einnahmen','sonstiges'].includes(c.id)&&(usedBycat[c.id]||0)>0);
+  if(cdata.length){
+    const chart=new Chart(document.getElementById(pieId),{type:'doughnut',data:{labels:cdata.map(c=>c.label),datasets:[{data:cdata.map(c=>r2(usedBycat[c.id]||0)),backgroundColor:cdata.map(c=>c.color),borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:ctx=>' '+fmt(ctx.parsed)}}}}});
+    if(acc==='p')pPie=chart;else jPie=chart;
+  }
+}
+
+function toggleDrop(id){
+  const el=document.getElementById(id);
+  const arrow=document.getElementById(id+'-arrow');
+  if(!el)return;
+  const open=el.classList.toggle('open');
+  if(arrow)arrow.textContent=open?'\u25b2':'\u25bc';
+}
+
+function renderNotes(acc){
+  const period=acc==='p'?pPeriod:jPeriod,pk=periodKey(period),notes=acc==='p'?pNotes:jNotes;
+  const filtered=notes.filter(n=>n.period===pk);
+  const el=document.getElementById(acc+'-notes-section');
+  if(!el)return;
+  let h='<p class="sec-label">Notizen</p>';
+  if(filtered.length){
+    h+='<div class="notes-box">';
+    filtered.forEach(n=>{h+='<div class="note-item"><span class="note-text">'+n.text+'</span><button class="note-del" onclick="deleteNote(\''+acc+'\',\''+n.id+'\')">×</button></div>';});
+    h+='</div>';
+  }
+  h+='<div class="notes-add"><input type="text" id="'+acc+'-note-input" placeholder="Notiz für '+periodLabel(period)+'…" onkeydown="if(event.key===\'Enter\')addNote(\''+acc+'\')"><button class="btn" onclick="addNote(\''+acc+'\')">+ Notiz</button></div>';
+  el.innerHTML=h;
+}
+function addNote(acc){
+  const input=document.getElementById(acc+'-note-input'),text=input.value.trim();if(!text)return;
+  const pk=periodKey(acc==='p'?pPeriod:jPeriod),notes=acc==='p'?pNotes:jNotes;
+  notes.push({id:pk+'-'+Date.now(),period:pk,text,date:new Date().toISOString().split('T')[0]});
+  saveNotes(acc);input.value='';renderNotes(acc);
+}
+function deleteNote(acc,id){
+  if(acc==='p')pNotes=pNotes.filter(n=>n.id!==id);else jNotes=jNotes.filter(n=>n.id!==id);
+  saveNotes(acc);renderNotes(acc);
+}
+
+function renderEntries(acc){
+  const isP=acc==='p',entries=isP?pEntries:jEntries,cats=isP?P_CATS:J_CATS,cm=isP?PCM:JCM,filter=isP?pFilter:jFilter;
+  const fper=document.getElementById(acc+'-f-period'),fperVal=fper.value;
+  const periods=[...new Set(entries.map(e=>periodKey(dateToPeriod(new Date(e.date+'T00:00:00')))))].sort().reverse();
+  fper.innerHTML='<option value="">Alle Zeiträume</option>'+periods.map(pk=>{const pp=periodFromKey(pk);return'<option value="'+pk+'" '+(pk===fperVal?'selected':'')+'>'+periodLabel(pp)+'</option>';}).join('');
+  if(fperVal)fper.value=fperVal;
+  document.getElementById(acc+'-cat-pills').innerHTML='<button class="cat-pill '+(filter==='all'?'active':'')+'" onclick="setFilter(\''+acc+'\',\'all\')">Alle</button>'+cats.map(c=>'<button class="cat-pill '+(filter===c.id?'active':'')+'" onclick="setFilter(\''+acc+'\',\''+c.id+'\')" style="'+(filter===c.id?'border-color:'+c.color+';color:'+c.color+';':'')+'">'+c.label+'</button>').join('');
+  let filtered=entries.filter(e=>{if(filter!=='all'&&e.cat!==filter)return false;if(fperVal&&!inPeriod(e.date,periodFromKey(fperVal)))return false;return true;}).sort((a,b)=>b.date.localeCompare(a.date));
+  document.getElementById(acc+'-entries-list').innerHTML=filtered.length?filtered.map(e=>{const cat=cm[e.cat]||{color:'#888',label:e.cat};return'<div class="entry-item"><div class="entry-dot" style="background:'+cat.color+';"></div><div class="entry-info"><div class="entry-name">'+e.desc+'</div><div class="entry-meta">'+cat.label+' \u00b7 '+new Date(e.date+'T00:00:00').toLocaleDateString('de-DE')+'</div></div><div class="entry-amount">'+fmt(e.amount)+'</div><button class="entry-del" onclick="delEntry(\''+acc+'\','+e.id+')" title="L\u00f6schen">\u00d7</button></div>';}).join(''):'<div class="empty">Keine Eintr\u00e4ge</div>';
+}
+function setFilter(acc,cat){if(acc==='p')pFilter=cat;else jFilter=cat;renderEntries(acc);}
+function addEntry(acc){
+  const desc=document.getElementById(acc+'-in-desc').value.trim(),amount=parseFloat(document.getElementById(acc+'-in-amt').value),cat=document.getElementById(acc+'-in-cat').value,date=document.getElementById(acc+'-in-date').value,fb=document.getElementById(acc+'-add-fb');
+  if(!desc||isNaN(amount)||amount<=0||!date){fb.style.color='#A32D2D';fb.textContent='Bitte alle Felder ausf\u00fcllen.';return;}
+  const entries=acc==='p'?pEntries:jEntries,newId=Math.max(...entries.map(e=>typeof e.id==='number'?e.id:0),0)+1;
+  entries.push({id:newId,desc,amount:r2(amount),cat,date});
+  if(acc==='p')saveP();else saveJ();
+  document.getElementById(acc+'-in-desc').value='';document.getElementById(acc+'-in-amt').value='';
+  fb.style.color='#3B6D11';fb.textContent='\u2713 Gespeichert';setTimeout(()=>fb.textContent='',2000);
+  if(acc==='p')pPeriod=dateToPeriod(new Date(date+'T00:00:00'));else jPeriod=dateToPeriod(new Date(date+'T00:00:00'));
+  renderOverview(acc);
+}
+
+let pending={p:[],j:[]};
+function splitCSVLine(line){const res=[];let cur='';let inQ=false;for(let i=0;i<line.length;i++){const ch=line[i];if(ch==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}else if((ch===';'||ch===',')&&!inQ){res.push(cur.trim());cur='';}else cur+=ch;}res.push(cur.trim());return res;}
+function parseDate(s){s=s.trim();const dp=s.split('.');if(dp.length===3){const y=dp[2].length===2?'20'+dp[2]:dp[2];return y+'-'+dp[1].padStart(2,'0')+'-'+dp[0].padStart(2,'0');}if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;return null;}
+function parseAmount(s){return parseFloat(s.replace(/\s/g,'').replace(/\./g,'').replace(',','.'));}
+function isUrlaubEntry(desc){return['zypern','cyprus','paralimni','famagusta','madrid','brixen','szczecin','kolbaskowo','groningen','amsterdam','mallorca','ibiza','tenerife','kanaren','kreta','rhodos','korfu','dubai','bangkok','phuket','bali','rumbo','airbnb','ryanair','easyjet','lufthansa','eurowings','condor','tuifly','flughafen','telefericos','seilbahn','mietwagen','sixt','europcar','hertz','avis'].some(k=>desc.toLowerCase().includes(k));}
+function parseCSV(text){const lines=text.split(/\r?\n/);let hi=-1,headers=[];for(let i=0;i<lines.length;i++){const cols=splitCSVLine(lines[i]),low=cols.map(c=>c.toLowerCase());if(low.some(c=>c.includes('buchungstag')||c.includes('valutadatum'))){headers=low;hi=i;break;}}if(hi<0)return null;const iDate=headers.findIndex(h=>h.includes('buchungstag')),iAmt=headers.findIndex(h=>h.includes('betrag')),iDesc=headers.findIndex(h=>h.includes('verwendungszweck')),iName=headers.findIndex(h=>h.includes('beg')||h.includes('auftraggeber'));if(iDate<0||iAmt<0)return null;const rows=[];for(let i=hi+1;i<lines.length;i++){const cols=splitCSVLine(lines[i]);if(cols.length<3)continue;const date=parseDate(cols[iDate]||''),amount=parseAmount(cols[iAmt]||'');if(!date||isNaN(amount))continue;const name=iName>=0?cols[iName]||'':'',usage=iDesc>=0?cols[iDesc]||'':'';const desc=((name&&usage)?name+' \u2013 '+usage:name||usage||'Buchung').substring(0,80);rows.push({id:Date.now()+Math.random(),date,amount,desc});}return rows;}
+function handleFile(acc,file){if(!file)return;const reader=new FileReader();reader.onload=e=>{try{const rows=parseCSV(e.target.result);if(!rows||!rows.length){showLog(acc,'Keine Buchungen gefunden.','err');return;}const nInc=rows.filter(r=>r.amount>0).length,nExp=rows.filter(r=>r.amount<0).length;pending[acc]=[...rows.filter(r=>r.amount>0).map(r=>{const d=r.desc.toLowerCase();return{...r,amount:r2(r.amount),cat:'einnahmen',skip:d.includes('luka')&&(d.includes('thiele')||d.includes('alexander')),isIncome:true};}), ...rows.filter(r=>r.amount<0).map(r=>({...r,amount:r2(Math.abs(r.amount)),cat:isUrlaubEntry(r.desc)?'urlaub':(acc==='p'?'fixkosten':'essen'),skip:false,isIncome:false}))];showLog(acc,'\u2713 '+rows.length+' Buchungen \u2014 '+nExp+' Ausgaben, '+nInc+' Einnahmen.','ok');renderAssign(acc);}catch(err){showLog(acc,'Fehler: '+err.message,'err');}};reader.readAsText(file,'windows-1252');}
+function showLog(acc,msg,type){const el=document.getElementById(acc+'-log');el.style.display='';el.className='log '+type;el.textContent=msg;}
+function renderAssign(acc){document.getElementById(acc+'-assign-sec').style.display='';const cats=acc==='p'?P_CATS:J_CATS,catOpts=cats.map(c=>'<option value="'+c.id+'">'+c.label+'</option>').join(''),list=document.getElementById(acc+'-assign-list');if(!pending[acc].length){list.innerHTML='<div class="empty">Keine Ausgaben.</div>';return;}list.innerHTML=pending[acc].map((r,i)=>{const sign=r.isIncome?'+':'\u2212',color=r.isIncome?'#3B6D11':'#A32D2D',opts=r.isIncome?'<option value="einnahmen">Einnahmen</option><option value="__skip">\u2014 \u00dcberspringen \u2014</option>':catOpts+'<option value="__skip">\u2014 \u00dcberspringen \u2014</option>';const selVal=r.skip?'__skip':r.cat;return'<div class="assign-row"><div class="assign-name" title="'+r.desc+'">'+r.desc+'</div><div class="assign-amt" style="color:'+color+'">'+sign+fmt(r.amount)+'</div><select onchange="pending[\''+acc+'\']['+i+'].cat=this.value;pending[\''+acc+'\']['+i+'].skip=this.value===\'__skip\'">'+opts+'</select></div>';}).join('');}
+function confirmImport(acc){const toAdd=pending[acc].filter(r=>!r.skip&&r.cat!=='__skip'),entries=acc==='p'?pEntries:jEntries,maxId=Math.max(...entries.map(e=>typeof e.id==='number'?e.id:0),0);toAdd.forEach((r,i)=>entries.push({id:maxId+i+1,desc:r.desc,amount:r.amount,cat:r.cat,date:r.date}));if(acc==='p')saveP();else saveJ();pending[acc]=[];document.getElementById(acc+'-assign-sec').style.display='none';showLog(acc,'\u2713 '+toAdd.length+' Buchungen importiert.','ok');renderOverview(acc);}
+
+['p','j'].forEach(acc=>{const dz=document.getElementById(acc+'-dz');if(!dz)return;dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');if(e.dataTransfer.files[0])handleFile(acc,e.dataTransfer.files[0]);});});
+
+const today=new Date().toISOString().split('T')[0];
+document.getElementById('p-in-date').value=today;
+document.getElementById('j-in-date').value=today;
+document.getElementById('p-in-cat').innerHTML=P_CATS.map(c=>'<option value="'+c.id+'">'+c.label+'</option>').join('');
+document.getElementById('j-in-cat').innerHTML=J_CATS.map(c=>'<option value="'+c.id+'">'+c.label+'</option>').join('');
+// ── BACKUP ───────────────────────────────────────────────────
+function createBackup(){
+  const data={
+    version:1,
+    date:new Date().toISOString(),
+    pEntries,jEntries,pNotes,jNotes,
+    pTemplates,jTemplates
+  };
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const d=new Date();
+  a.href=url;
+  a.download='finanztool-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function loadBackup(file){
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const data=JSON.parse(e.target.result);
+      if(!data.pEntries||!data.jEntries)throw new Error('Ungültiges Backup');
+      pEntries=data.pEntries;
+      jEntries=data.jEntries;
+      pNotes=data.pNotes||[];
+      jNotes=data.jNotes||[];
+      if(data.pTemplates&&data.pTemplates.length){pTemplates=data.pTemplates;saveTpls('p');}
+      if(data.jTemplates&&data.jTemplates.length){jTemplates=data.jTemplates;saveTpls('j');}
+      saveP();saveJ();saveNotes('p');saveNotes('j');
+      renderOverview('p');renderOverview('j');
+      alert('✓ Backup erfolgreich geladen — '+pEntries.length+' Sparkasse-Einträge, '+jEntries.length+' ING-Einträge.');
+    }catch(err){alert('Fehler beim Laden: '+err.message);}
+  };
+  reader.readAsText(file);
+}
+// ─────────────────────────────────────────────────────────────
+
+// ── DELETE ALL + UNDO ────────────────────────────────────────
+let undoStack=null,undoTimer=null;
+function showUndoToast(msg){
+  const toast=document.getElementById('undo-toast');
+  document.getElementById('undo-msg').textContent=msg;
+  toast.classList.remove('hidden');
+  if(undoTimer)clearTimeout(undoTimer);
+  undoTimer=setTimeout(()=>{toast.classList.add('hidden');undoStack=null;},6000);
+}
+function undoDelete(){
+  if(!undoStack)return;
+  const{acc,entries}=undoStack;
+  if(acc==='p'){pEntries=entries;saveP();}else{jEntries=entries;saveJ();}
+  undoStack=null;
+  if(undoTimer)clearTimeout(undoTimer);
+  document.getElementById('undo-toast').classList.add('hidden');
+  renderEntries(acc);renderOverview(acc);
+}
+function deleteAllEntries(acc){
+  const entries=acc==='p'?pEntries:jEntries;
+  const filter=acc==='p'?pFilter:jFilter;
+  const fper=document.getElementById(acc+'-f-period').value;
+  const period=fper?periodFromKey(fper):null;
+  const toDelete=entries.filter(e=>{
+    if(filter!=='all'&&e.cat!==filter)return false;
+    if(period&&!inPeriod(e.date,period))return false;
+    return true;
+  });
+  if(!toDelete.length)return;
+  undoStack={acc,entries:[...entries]};
+  const ids=new Set(toDelete.map(e=>e.id));
+  if(acc==='p'){pEntries=pEntries.filter(e=>!ids.has(e.id));saveP();}
+  else{jEntries=jEntries.filter(e=>!ids.has(e.id));saveJ();}
+  renderEntries(acc);renderOverview(acc);
+  showUndoToast(toDelete.length+' Einträge gelöscht');
+}
+function delEntry(acc,id){
+  const snapshot=acc==='p'?[...pEntries]:[...jEntries];
+  undoStack={acc,entries:snapshot};
+  if(acc==='p'){pEntries=pEntries.filter(e=>e.id!==id);saveP();}
+  else{jEntries=jEntries.filter(e=>e.id!==id);saveJ();}
+  renderEntries(acc);renderOverview(acc);
+  showUndoToast('Eintrag gelöscht');
+}
+
+// ── TEMPLATES ────────────────────────────────────────────────
+const P_DEFAULT_TPLS=[
+  {id:'pt1',desc:'ING-DiBa Ratenkredit',amount:318.10,cat:'fixkosten',day:30},
+  {id:'pt2',desc:'Trade Republic',amount:82.00,cat:'sparen',day:5},
+  {id:'pt3',desc:'LBS Nordost',amount:180.00,cat:'sparen',day:2},
+  {id:'pt4',desc:'Allianz PrivRent InvestFlex',amount:25.53,cat:'sparen',day:2},
+  {id:'pt5',desc:'Hannoversche Lebensversicherung',amount:6.97,cat:'sparen',day:2},
+  {id:'pt6',desc:'DEVK Leben',amount:25.00,cat:'sparen',day:15},
+  {id:'pt7',desc:'DEVK Haftpflicht',amount:8.40,cat:'fixkosten',day:15},
+  {id:'pt8',desc:'Amazon Prime',amount:8.99,cat:'fixkosten',day:5},
+  {id:'pt9',desc:'PayPal – congstar Telekom',amount:17.10,cat:'fixkosten',day:15},
+  {id:'pt10',desc:'PayPal – FeneroFolio',amount:14.99,cat:'fixkosten',day:26},
+  {id:'pt11',desc:'Sparkasse Lose',amount:50.00,cat:'fixkosten',day:5},
+];
+const J_DEFAULT_TPLS=[
+  {id:'jt1',desc:'Neubrandenburger Wohnungsgesellschaft – Miete',amount:825.00,cat:'miete',day:5},
+  {id:'jt2',desc:'Stadtwerke Neubrandenburg – Strom',amount:30.00,cat:'fixkosten',day:30},
+  {id:'jt3',desc:'1+1 Telecom – Internet',amount:50.19,cat:'fixkosten',day:27},
+  {id:'jt4',desc:'Provinzial Hausratversicherung',amount:13.96,cat:'fixkosten',day:1},
+  {id:'jt5',desc:'Rundfunk ARD/ZDF/DRadio',amount:55.08,cat:'fixkosten',day:15},
+];
+let pTemplates=[],jTemplates=[];
+try{pTemplates=JSON.parse(localStorage.getItem('fin_ptpls')||'null')||[];}catch(e){}
+try{jTemplates=JSON.parse(localStorage.getItem('fin_jtpls')||'null')||[];}catch(e){}
+if(!pTemplates.length){pTemplates=[...P_DEFAULT_TPLS];saveTpls('p');}
+if(!jTemplates.length){jTemplates=[...J_DEFAULT_TPLS];saveTpls('j');}
+function saveTpls(acc){try{localStorage.setItem(acc==='p'?'fin_ptpls':'fin_jtpls',JSON.stringify(acc==='p'?pTemplates:jTemplates));}catch(e){}}
+function renderTemplates(acc){
+  const tpls=acc==='p'?pTemplates:jTemplates,cats=acc==='p'?P_CATS:J_CATS;
+  const list=document.getElementById(acc+'-tpl-list');
+  if(!tpls.length){list.innerHTML='<div class="empty">Keine Vorlagen</div>';return;}
+  const byCat={};tpls.forEach(t=>{if(!byCat[t.cat])byCat[t.cat]=[];byCat[t.cat].push(t);});
+  let html='';
+  cats.forEach(c=>{
+    if(!byCat[c.id])return;
+    html+='<p class="sec-label" style="margin-top:10px;">'+c.label+'</p>';
+    byCat[c.id].forEach(t=>{
+      html+='<div class="tpl-row">'
+        +'<div class="tpl-dot" style="background:'+c.color+';"></div>'
+        +'<div class="tpl-info"><div class="tpl-name">'+t.desc+'</div><div class="tpl-meta">jeden Monat, '+t.day+'. · '+c.label+'</div></div>'
+        +'<div class="tpl-amt">'+fmt(t.amount)+'</div>'
+        +'<div class="tpl-actions">'
+        +'<button class="tpl-btn" onclick="editTpl(\''+acc+'\',\''+t.id+'\')">✎</button>'
+        +'<button class="tpl-btn del" onclick="deleteTpl(\''+acc+'\',\''+t.id+'\')">×</button>'
+        +'</div></div>';
+    });
+  });
+  list.innerHTML=html;
+}
+function showTplForm(acc,tplId){
+  const cats=acc==='p'?P_CATS:J_CATS,tpls=acc==='p'?pTemplates:jTemplates;
+  const ex=tplId?tpls.find(t=>t.id===tplId):null;
+  const catOpts=cats.map(c=>'<option value="'+c.id+'" '+(ex&&ex.cat===c.id?'selected':'')+'>'+c.label+'</option>').join('');
+  document.getElementById(acc+'-tpl-form-wrap').innerHTML='<div class="tpl-form">'
+    +'<p class="sec-label">'+(ex?'Vorlage bearbeiten':'Neue Vorlage')+'</p>'
+    +'<div class="form-row">'
+    +'<div class="form-group"><label>Beschreibung</label><input type="text" id="'+acc+'-tpl-desc" value="'+(ex?ex.desc:'')+'" placeholder="z.B. Netflix"></div>'
+    +'<div class="form-group"><label>Betrag (€)</label><input type="number" id="'+acc+'-tpl-amt" value="'+(ex?ex.amount:'')+'" min="0" step="0.01"></div>'
+    +'</div><div class="form-row">'
+    +'<div class="form-group"><label>Kategorie</label><select id="'+acc+'-tpl-cat">'+catOpts+'</select></div>'
+    +'<div class="form-group"><label>Tag im Monat</label><input type="number" id="'+acc+'-tpl-day" value="'+(ex?ex.day:1)+'" min="1" max="28"></div>'
+    +'</div><div class="form-actions" style="gap:8px;">'
+    +'<button class="btn" onclick="hideTplForm(\''+acc+'\')">Abbrechen</button>'
+    +'<button class="btn primary" onclick="saveTplForm(\''+acc+'\',\''+(tplId||'')+'\')">✓ Speichern</button>'
+    +'</div></div>';
+}
+function hideTplForm(acc){document.getElementById(acc+'-tpl-form-wrap').innerHTML='';}
+function saveTplForm(acc,tplId){
+  const desc=document.getElementById(acc+'-tpl-desc').value.trim();
+  const amount=parseFloat(document.getElementById(acc+'-tpl-amt').value);
+  const cat=document.getElementById(acc+'-tpl-cat').value;
+  const day=parseInt(document.getElementById(acc+'-tpl-day').value);
+  if(!desc||isNaN(amount)||amount<=0||isNaN(day))return;
+  const tpls=acc==='p'?pTemplates:jTemplates;
+  if(tplId){const i=tpls.findIndex(t=>t.id===tplId);if(i>=0)tpls[i]={id:tplId,desc,amount:r2(amount),cat,day};}
+  else tpls.push({id:'t'+Date.now(),desc,amount:r2(amount),cat,day});
+  saveTpls(acc);hideTplForm(acc);renderTemplates(acc);
+}
+function editTpl(acc,tplId){showTplForm(acc,tplId);}
+function deleteTpl(acc,tplId){
+  if(acc==='p')pTemplates=pTemplates.filter(t=>t.id!==tplId);
+  else jTemplates=jTemplates.filter(t=>t.id!==tplId);
+  saveTpls(acc);renderTemplates(acc);
+}
+
+// ── MONTHLY DIALOG ───────────────────────────────────────────
+let mmAcc=null,mmPeriod=null;
+function forceMonthlyDialog(acc){
+  const pk=periodKey(acc==='p'?pPeriod:jPeriod);
+  localStorage.removeItem('fin_mm_done_'+acc+'_'+pk);
+  checkMonthlyDialog(acc);
+}
+function checkMonthlyDialog(acc){
+  const period=acc==='p'?pPeriod:jPeriod,pk=periodKey(period);
+  if(localStorage.getItem('fin_mm_done_'+acc+'_'+pk))return;
+  const tpls=acc==='p'?pTemplates:jTemplates;
+  if(!tpls.length)return;
+  mmAcc=acc;mmPeriod=period;
+  document.getElementById('mm-title').textContent='Vorlagen für '+periodLabel(period);
+  document.getElementById('mm-sub').textContent='Welche Buchungen sollen eingetragen werden?';
+  const cats=acc==='p'?P_CATS:J_CATS;
+  const byCat={};tpls.forEach(t=>{if(!byCat[t.cat])byCat[t.cat]=[];byCat[t.cat].push(t);});
+  let html='';
+  cats.forEach(c=>{
+    if(!byCat[c.id])return;
+    html+='<div class="mm-section"><div class="mm-section-label">'+c.label+'</div>';
+    byCat[c.id].forEach(t=>{
+      html+='<div class="mm-item checked" id="mm-item-'+t.id+'">'
+        +'<input type="checkbox" id="mm-cb-'+t.id+'" checked onchange="mmSync(\''+t.id+'\')">'
+        +'<div class="mm-item-info" onclick="mmToggle(\''+t.id+'\')">'
+        +'<div class="mm-item-name">'+t.desc+'</div>'
+        +'<div class="mm-item-meta">'+t.day+'. des Monats</div></div>'
+        +'<div class="mm-item-amt">'+fmt(t.amount)+'</div>'
+        +'</div>';
+    });
+    html+='</div>';
+  });
+  document.getElementById('mm-list').innerHTML=html;
+  document.getElementById('monthly-overlay').classList.add('open');
+}
+function mmSync(tplId){
+  const cb=document.getElementById('mm-cb-'+tplId),row=document.getElementById('mm-item-'+tplId);
+  if(cb&&row)row.classList.toggle('checked',cb.checked);
+}
+function mmToggle(tplId){
+  const cb=document.getElementById('mm-cb-'+tplId),row=document.getElementById('mm-item-'+tplId);
+  if(!cb||!row)return;
+  cb.checked=!cb.checked;
+  row.classList.toggle('checked',cb.checked);
+}
+function mmSelectAll(){
+  const all=document.querySelectorAll('#mm-list input[type=checkbox]');
+  const allChecked=Array.from(all).every(c=>c.checked);
+  all.forEach(cb=>{cb.checked=!allChecked;const row=document.getElementById('mm-item-'+cb.id.replace('mm-cb-',''));if(row)row.classList.toggle('checked',cb.checked);});
+}
+function closeMonthly(){
+  localStorage.setItem('fin_mm_done_'+mmAcc+'_'+periodKey(mmPeriod),'1');
+  document.getElementById('monthly-overlay').classList.remove('open');
+}
+function confirmMonthly(){
+  const acc=mmAcc,period=mmPeriod;
+  const tpls=acc==='p'?pTemplates:jTemplates;
+  const entries=acc==='p'?pEntries:jEntries;
+  const allCbs=document.querySelectorAll('#mm-list input[type=checkbox]');
+  let added=0;
+  const maxId=Math.max(...entries.map(e=>typeof e.id==='number'?e.id:0),0);
+  const startDate=periodStart(period),startY=startDate.getFullYear(),startM=startDate.getMonth();
+  allCbs.forEach(cb=>{
+    if(!cb.checked)return;
+    const tpl=tpls.find(t=>t.id===cb.id.replace('mm-cb-',''));
+    if(!tpl)return;
+    const d=Math.min(tpl.day,28);
+    let eY=startY,eM=startM;
+    if(d<CUTDAY){eY=period.y;eM=period.m;}
+    const dateStr=eY+'-'+String(eM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    entries.push({id:maxId+added+1,desc:tpl.desc,amount:r2(tpl.amount),cat:tpl.cat,date:dateStr});
+    added++;
+  });
+  if(acc==='p')saveP();else saveJ();
+  closeMonthly();
+  renderOverview(acc);
+}
+
+renderOverview('p');
+setTimeout(()=>checkMonthlyDialog('p'),400);
+</script>
+</body>
+</html>
